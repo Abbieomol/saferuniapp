@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "385632219541",
+    "project_id": "safer-uni",
+    "storage_bucket": "safer-uni.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:385632219541:android:9dc0a80ae7b3f668c2469c",
+        "android_client_info": {
+          "package_name": "com.leilaomol.campus_incident_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQKP2kurOJv_oeoGkOCpcQvwm7CtQUzKk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
