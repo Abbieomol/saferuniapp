@@ -110,6 +110,40 @@ service cloud.firestore {
                        'building', 'locationDetail', 'updatedAt'])
         && validReportFields(request.resource.data);
 
+      // "Me too": any other verified user may add or remove ONLY their
+      // own uid in affectedBy, and only while the report is still open.
+      allow update: if isAluVerified()
+        && resource.data.reporterId != request.auth.uid
+        && resource.data.status in ['submitted', 'inReview', 'inProgress']
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['affectedBy'])
+        && request.resource.data.affectedBy.size() <= 2000
+        && (
+          request.resource.data.affectedBy.toSet()
+            == resource.data.get('affectedBy', []).toSet()
+                 .union([request.auth.uid].toSet())
+          || request.resource.data.affectedBy.toSet()
+            == resource.data.get('affectedBy', []).toSet()
+                 .difference([request.auth.uid].toSet())
+        );
+
+      // Reporter's answer after staff resolve it: "Confirmed fixed"
+      // keeps it resolved; "Still broken" reopens it as inReview.
+      // Exactly one timeline entry is added either way.
+      allow update: if isAluVerified()
+        && resource.data.reporterId == request.auth.uid
+        && resource.data.status == 'resolved'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'reporterConfirmed', 'history', 'updatedAt'])
+        && request.resource.data.history.size()
+             == resource.data.history.size() + 1
+        && (
+          (request.resource.data.reporterConfirmed == true
+            && request.resource.data.status == 'resolved')
+          || (request.resource.data.reporterConfirmed == false
+            && request.resource.data.status == 'inReview')
+        );
+
       allow delete: if isStaff()
         || (isAluVerified()
             && resource.data.reporterId == request.auth.uid
