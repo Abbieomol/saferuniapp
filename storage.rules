@@ -1,0 +1,38 @@
+rules_version = '2';
+
+// Campus Fix – Storage security rules (incident photos)
+// Photos live at incident_photos/{uid}/{fileName}.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAluVerified() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower()
+             .matches('^[^@]+@(alustudent|alueducation)[.]com$');
+    }
+
+    // Cross-service check: reads the role from Firestore.
+    function isStaff() {
+      return isAluVerified()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid))
+             .data.role == 'staff';
+    }
+
+    match /incident_photos/{uid}/{fileName} {
+      allow read: if isAluVerified();
+
+      // Only into your own folder, only images, max 5 MB.
+      allow create: if isAluVerified()
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+
+      allow update: if false;
+
+      allow delete: if isAluVerified()
+        && (request.auth.uid == uid || isStaff());
+    }
+  }
+}

@@ -1,0 +1,119 @@
+rules_version = '2';
+
+// Campus Fix – Firestore security rules (ALU Rwanda)
+//
+// Access model:
+//   * Only verified @alustudent.com / @alueducation.com accounts get in.
+//   * Everyone starts as "student". Staff are promoted by changing
+//     users/{uid}.role to "staff" in the Firebase console – the app
+//     itself can never set or change a role.
+//   * Students create reports and may edit/delete their own while it is
+//     still "submitted". Only staff can change a report's status.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+
+    function isAluVerified() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower()
+             .matches('^[^@]+@(alustudent|alueducation)[.]com$');
+    }
+
+    function isStaff() {
+      return isAluVerified()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid))
+             .data.role == 'staff';
+    }
+
+    function validCategory(c) {
+      return c in ['facilities', 'water', 'electricity', 'furniture',
+                   'sanitation', 'safety', 'other'];
+    }
+    function validPriority(p) { return p in ['low', 'medium', 'high']; }
+    function validStatus(s) {
+      return s in ['submitted', 'inReview', 'inProgress', 'resolved', 'rejected'];
+    }
+    function validBuilding(b) {
+      return b in ['Enterprise', 'Social Commons', 'Learning Commons',
+                   'Parking', 'Other area'];
+    }
+
+    // Shared checks for the fields a reporter fills in.
+    function validReportFields(d) {
+      return d.title is string && d.title.size() >= 5 && d.title.size() <= 80
+        && d.description is string
+        && d.description.size() >= 15 && d.description.size() <= 1000
+        && validCategory(d.category)
+        && validPriority(d.priority)
+        && validBuilding(d.building)
+        && d.locationDetail is string && d.locationDetail.size() <= 120
+        // "Other area" must say where it is.
+        && (d.building != 'Other area' || d.locationDetail.size() > 0);
+    }
+
+    // ---------- Users ----------
+
+    match /users/{uid} {
+      allow read: if isAluVerified()
+        && (request.auth.uid == uid || isStaff());
+
+      // Created once by the app, always as a student, with the
+      // email from the verified token (can't claim someone else's).
+      allow create: if isAluVerified()
+        && request.auth.uid == uid
+        && request.resource.data.keys()
+             .hasOnly(['email', 'fullName', 'role', 'createdAt'])
+        && request.resource.data.role == 'student'
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.fullName is string
+        && request.resource.data.createdAt == request.time;
+
+      // Users may fix their own name, never their role or email.
+      allow update: if isAluVerified()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data)
+             .affectedKeys().hasOnly(['fullName']);
+
+      allow delete: if false;
+    }
+
+    // ---------- Incidents ----------
+
+    match /incidents/{incidentId} {
+      allow read: if isAluVerified();
+
+      allow create: if isAluVerified()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.isAnonymous is bool
+        && request.resource.data.history.size() == 1
+        && request.resource.data.createdAt == request.time
+        && validReportFields(request.resource.data);
+
+      // Staff: change status, append exactly one timeline entry.
+      allow update: if isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'history', 'updatedAt'])
+        && validStatus(request.resource.data.status)
+        && request.resource.data.history.size()
+             == resource.data.history.size() + 1;
+
+      // Reporter: correct details while it's still "submitted".
+      allow update: if isAluVerified()
+        && resource.data.reporterId == request.auth.uid
+        && resource.data.status == 'submitted'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['title', 'description', 'category', 'priority',
+                       'building', 'locationDetail', 'updatedAt'])
+        && validReportFields(request.resource.data);
+
+      allow delete: if isStaff()
+        || (isAluVerified()
+            && resource.data.reporterId == request.auth.uid
+            && resource.data.status == 'submitted');
+    }
+  }
+}

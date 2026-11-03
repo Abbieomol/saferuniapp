@@ -1,1 +1,27 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"safer-uni","appId":"1:385632219541:android:9dc0a80ae7b3f668c2469c","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"safer-uni","configurations":{"android":"1:385632219541:android:9dc0a80ae7b3f668c2469c"}}}}}}
+{
+    "flutter":  {
+                    "platforms":  {
+                                      "android":  {
+                                                      "default":  {
+                                                                      "projectId":  "safer-uni",
+                                                                      "appId":  "1:385632219541:android:9dc0a80ae7b3f668c2469c",
+                                                                      "fileOutput":  "android/app/google-services.json"
+                                                                  }
+                                                  },
+                                      "dart":  {
+                                                   "lib/firebase_options.dart":  {
+                                                                                     "projectId":  "safer-uni",
+                                                                                     "configurations":  {
+                                                                                                            "android":  "1:385632219541:android:9dc0a80ae7b3f668c2469c"
+                                                                                                        }
+                                                                                 }
+                                               }
+                                  }
+                },
+    "firestore":  {
+                      "rules":  "firestore.rules"
+                  },
+    "storage":  {
+                    "rules":  "storage.rules"
+                }
+}
