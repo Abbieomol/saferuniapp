@@ -6,6 +6,7 @@ import 'core/app_config.dart';
 import 'core/app_theme.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'providers/incident_provider.dart';
 import 'screens/auth_gate.dart';
 
 Future<void> main() async {
@@ -20,9 +21,17 @@ class CampusIncidentApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Providers sit above MaterialApp so every screen and route can
-    // read them. More providers (incidents, filters) are added here.
+    // read them. IncidentProvider depends on AuthProvider: when the
+    // signed-in user changes, it starts or stops its Firestore listener.
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, IncidentProvider>(
+          create: (_) => IncidentProvider(),
+          update: (_, auth, incidents) => incidents!
+            ..updateUser(auth.status == AuthStatus.signedIn ? auth.user : null),
+        ),
+      ],
       child: MaterialApp(
         title: AppConfig.appName,
         debugShowCheckedModeBanner: false,

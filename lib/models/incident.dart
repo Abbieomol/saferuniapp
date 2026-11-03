@@ -47,6 +47,13 @@ class Incident {
   final String reporterName;
   final bool isAnonymous;
   final List<StatusUpdate> history;
+
+  /// uids of other students who tapped "This affects me too".
+  final List<String> affectedBy;
+
+  /// Set by the reporter after staff mark the report resolved:
+  /// true = "Confirmed fixed", false = reopened as "Still broken".
+  final bool? reporterConfirmed;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -64,6 +71,8 @@ class Incident {
     required this.isAnonymous,
     required this.history,
     required this.createdAt,
+    this.affectedBy = const [],
+    this.reporterConfirmed,
     required this.updatedAt,
     this.photoUrl,
     this.photoPath,
@@ -71,7 +80,21 @@ class Incident {
 
   /// Name shown to other students; anonymous reports hide the reporter.
   String get displayReporter =>
-      isAnonymous ? 'Anonymous student' : reporterName;
+      isAnonymous || reporterName.isEmpty ? 'Anonymous student' : reporterName;
+
+  /// The reporter plus everyone who said it affects them too.
+  int get affectedCount => affectedBy.length + 1;
+
+  bool isReportedBy(String? uid) => uid != null && reporterId == uid;
+
+  bool isAffecting(String? uid) => uid != null && affectedBy.contains(uid);
+
+  /// Reporter may edit or delete only before staff pick it up.
+  bool get isEditable => status == IncidentStatus.submitted;
+
+  /// Resolved, and the reporter hasn't yet confirmed the fix.
+  bool get awaitingConfirmation =>
+      status == IncidentStatus.resolved && reporterConfirmed != true;
 
   factory Incident.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
@@ -93,6 +116,10 @@ class Incident {
       history: rawHistory
           .map((e) => StatusUpdate.fromMap(Map<String, dynamic>.from(e as Map)))
           .toList(),
+      affectedBy: List<String>.from(
+        (data['affectedBy'] as List<dynamic>?) ?? const [],
+      ),
+      reporterConfirmed: data['reporterConfirmed'] as bool?,
       // A just-written document can briefly have a null server timestamp.
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),

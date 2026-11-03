@@ -57,7 +57,7 @@ class IncidentRepository {
     final firstEntry = StatusUpdate(
       status: IncidentStatus.submitted,
       note: 'Report submitted',
-      updatedBy: reporter.uid,
+      updatedBy: 'Reporter',
       at: DateTime.now(),
     );
 
@@ -72,8 +72,11 @@ class IncidentRepository {
         'locationDetail': locationDetail.trim(),
         'photoUrl': photoUrl,
         'photoPath': photoPath,
+        // reporterId is an opaque uid, needed so the rules can let the
+        // reporter edit/delete. The name is not stored for anonymous
+        // reports, so it can't leak to anyone reading the database.
         'reporterId': reporter.uid,
-        'reporterName': reporter.fullName,
+        'reporterName': isAnonymous ? '' : reporter.fullName,
         'isAnonymous': isAnonymous,
         'history': [firstEntry.toMap()],
         'createdAt': FieldValue.serverTimestamp(),
@@ -127,6 +130,46 @@ class IncidentRepository {
       'priority': priority.name,
       'building': building,
       'locationDetail': locationDetail.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// "This affects me too": adds or removes only the caller's own uid.
+  /// arrayUnion/arrayRemove avoid overwriting other students' taps.
+  Future<void> setAffected({
+    required String incidentId,
+    required String uid,
+    required bool affected,
+  }) {
+    return _incidents.doc(incidentId).update({
+      'affectedBy': affected
+          ? FieldValue.arrayUnion([uid])
+          : FieldValue.arrayRemove([uid]),
+    });
+  }
+
+  /// Reporter's answer after staff mark a report resolved.
+  /// Confirmed: stays resolved. Still broken: reopens as "In review".
+  Future<void> respondToResolution({
+    required String incidentId,
+    required bool fixed,
+    required String note,
+  }) {
+    final status = fixed ? IncidentStatus.resolved : IncidentStatus.inReview;
+    final entry = StatusUpdate(
+      status: status,
+      note: note.trim().isNotEmpty
+          ? note.trim()
+          : fixed
+          ? 'Reporter confirmed the issue is fixed'
+          : 'Reporter says the issue is still not fixed',
+      updatedBy: 'Reporter',
+      at: DateTime.now(),
+    );
+    return _incidents.doc(incidentId).update({
+      'status': status.name,
+      'reporterConfirmed': fixed,
+      'history': FieldValue.arrayUnion([entry.toMap()]),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
