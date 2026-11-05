@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'auth/login_screen.dart';
 import 'auth/verify_email_screen.dart';
-import 'home_screen.dart';
+import 'home_shell.dart';
 
 /// Root of the app. Chooses a screen from the current auth state, so
 /// signing in, verifying or signing out never needs manual navigation.
@@ -26,7 +26,7 @@ class AuthGate extends StatelessWidget {
         AuthStatus.unverified => const VerifyEmailScreen(
           key: ValueKey('verify'),
         ),
-        AuthStatus.signedIn => const HomeScreen(key: ValueKey('home')),
+        AuthStatus.signedIn => const HomeShell(key: ValueKey('home')),
       },
     );
   }
