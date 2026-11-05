@@ -265,7 +265,7 @@ class _CategoryBars extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               children: [
-                Icon(e.key.icon, size: 18, color: Colors.grey.shade700),
+                Icon(e.key.icon, size: 18, color: e.key.color),
                 const SizedBox(width: 8),
                 SizedBox(
                   width: 120,
@@ -282,7 +282,7 @@ class _CategoryBars extends StatelessWidget {
                       value: e.value / max,
                       minHeight: 10,
                       backgroundColor: Colors.grey.shade200,
-                      color: AppTheme.primary,
+                      color: e.key.color,
                     ),
                   ),
                 ),

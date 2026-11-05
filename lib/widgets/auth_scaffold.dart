@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/app_config.dart';
 import '../core/app_theme.dart';
+import 'safer_uni_logo.dart';
 
-/// Shared layout for login, register and verify screens:
-/// app mark at the top, a title, and scrollable content.
+/// Shared layout for login, register and verify screens: a navy brand
+/// header with the logo, and the form in a raised white card.
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({
     super.key,
@@ -20,69 +22,90 @@ class AuthScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.report_gmailerrorred,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppConfig.appName,
-                            style: text.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
+    final topInset = MediaQuery.paddingOf(context).top;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light, // white status bar icons on navy
+      child: Scaffold(
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ----- Brand header -----
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: AppTheme.heroGradient,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(32),
+                  ),
+                ),
+                padding: EdgeInsets.fromLTRB(24, topInset + 28, 24, 72),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const SaferUniLogo(size: 44, onDark: true),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppConfig.appName,
+                              style: text.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
-                          ),
-                          Text(
-                            AppConfig.campusName,
-                            style: text.bodySmall?.copyWith(
-                              color: Colors.grey.shade600,
+                            Text(
+                              AppConfig.campusName,
+                              style: text.bodySmall?.copyWith(
+                                color: Colors.white70,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      title,
+                      style: text.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                  Text(
-                    title,
-                    style: text.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primary,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    subtitle,
-                    style: text.bodyMedium?.copyWith(
-                      color: Colors.grey.shade700,
+                    const SizedBox(height: 8),
+                    Text(
+                      subtitle,
+                      style: text.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.78),
+                        height: 1.4,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 28),
-                  child,
-                ],
+                  ],
+                ),
               ),
-            ),
+              // ----- Form card, overlapping the header -----
+              Transform.translate(
+                offset: const Offset(0, -44),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 480),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 18),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: AppTheme.softShadow,
+                      ),
+                      child: child,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

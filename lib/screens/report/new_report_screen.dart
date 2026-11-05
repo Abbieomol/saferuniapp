@@ -191,24 +191,27 @@ class _NewReportScreenState extends State<NewReportScreen> {
                   builder: (field) => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: IncidentCategory.values.map((c) {
-                          final selected = c == _category;
-                          return ChoiceChip(
-                            avatar: Icon(c.icon, size: 18),
-                            label: Text(c.label),
-                            selected: selected,
-                            showCheckmark: false,
-                            onSelected: busy
-                                ? null
-                                : (_) {
-                                    setState(() => _category = c);
-                                    field.didChange(c);
-                                  },
-                          );
-                        }).toList(),
+                      GridView.count(
+                        crossAxisCount: 3,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 0.95,
+                        children: IncidentCategory.values
+                            .map(
+                              (c) => _CategoryTile(
+                                category: c,
+                                selected: c == _category,
+                                onTap: busy
+                                    ? null
+                                    : () {
+                                        setState(() => _category = c);
+                                        field.didChange(c);
+                                      },
+                              ),
+                            )
+                            .toList(),
                       ),
                       if (field.hasError)
                         Padding(
@@ -458,6 +461,66 @@ class _SimilarReports extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Large tappable category choice with the category's colour.
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IncidentCategory category;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = category.color;
+    return Material(
+      color: selected ? color.withValues(alpha: 0.1) : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected ? color : const Color(0xFFE3E8F0),
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: color.withValues(alpha: selected ? 0.2 : 0.12),
+                child: Icon(category.icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                category.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.2,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? color : null,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

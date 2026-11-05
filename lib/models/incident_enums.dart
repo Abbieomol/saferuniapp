@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 
 /// Types of problem a student can report.
 enum IncidentCategory {
-  facilities('Broken facilities', Icons.build_outlined),
-  water('Water shortage', Icons.water_drop_outlined),
-  electricity('Electricity outage', Icons.bolt_outlined),
-  furniture('Damaged furniture', Icons.chair_outlined),
-  sanitation('Sanitation', Icons.cleaning_services_outlined),
-  safety('Safety concern', Icons.health_and_safety_outlined),
-  other('Other', Icons.help_outline);
+  facilities('Broken facilities', Icons.build_outlined, Color(0xFF6D5BD0)),
+  water('Water shortage', Icons.water_drop_outlined, Color(0xFF0EA5E9)),
+  electricity('Electricity outage', Icons.bolt_outlined, Color(0xFFF59E0B)),
+  furniture('Damaged furniture', Icons.chair_outlined, Color(0xFF9A6B3F)),
+  sanitation('Sanitation', Icons.cleaning_services_outlined, Color(0xFF10B981)),
+  safety('Safety concern', Icons.health_and_safety_outlined, Color(0xFFEF4444)),
+  other('Other', Icons.help_outline, Color(0xFF64748B));
 
-  const IncidentCategory(this.label, this.icon);
+  const IncidentCategory(this.label, this.icon, this.color);
   final String label;
   final IconData icon;
+
+  /// Used for the category's icon tile so types are easy to tell apart.
+  final Color color;
 
   static IncidentCategory fromName(String? name) => IncidentCategory.values
       .firstWhere((c) => c.name == name, orElse: () => IncidentCategory.other);

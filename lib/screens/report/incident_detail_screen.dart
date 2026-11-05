@@ -115,7 +115,11 @@ class IncidentDetailScreen extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 14),
-          _InfoRow(icon: incident.category.icon, text: incident.category.label),
+          _InfoRow(
+            icon: incident.category.icon,
+            text: incident.category.label,
+            color: incident.category.color,
+          ),
           _InfoRow(
             icon: Icons.place_outlined,
             text: incident.locationDetail.isEmpty
@@ -257,10 +261,11 @@ class _Photo extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.text});
+  const _InfoRow({required this.icon, required this.text, this.color});
 
   final IconData icon;
   final String text;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +274,7 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: Colors.grey.shade600),
+          Icon(icon, size: 18, color: color ?? Colors.grey.shade600),
           const SizedBox(width: 8),
           Expanded(
             child: Text(text, style: TextStyle(color: Colors.grey.shade800)),
