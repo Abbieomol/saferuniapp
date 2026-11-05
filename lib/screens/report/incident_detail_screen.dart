@@ -10,6 +10,7 @@ import '../../providers/incident_provider.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/status_chip.dart';
 import '../../widgets/status_timeline.dart';
+import '../../widgets/update_status_sheet.dart';
 import 'new_report_screen.dart';
 import 'photo_viewer_screen.dart';
 
@@ -27,6 +28,7 @@ class IncidentDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<IncidentProvider>();
     final uid = context.select<AuthProvider, String?>((a) => a.user?.uid);
+    final isStaff = context.select<AuthProvider, bool>((a) => a.isStaff);
     final incident = provider.byId(incidentId);
 
     if (incident == null) {
@@ -47,7 +49,7 @@ class IncidentDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Report details'),
         actions: [
-          if (isMine && incident.isEditable) ...[
+          if (isMine && incident.isEditable)
             IconButton(
               tooltip: 'Edit report',
               icon: const Icon(Icons.edit_outlined),
@@ -59,14 +61,32 @@ class IncidentDetailScreen extends StatelessWidget {
                       ),
                     ),
             ),
+          // Reporter while still "Submitted"; staff at any time
+          // (e.g. spam or abusive reports). Same rule in Firestore.
+          if ((isMine && incident.isEditable) || isStaff)
             IconButton(
               tooltip: 'Delete report',
               icon: const Icon(Icons.delete_outline),
               onPressed: busy ? null : () => _delete(context, incident),
             ),
-          ],
         ],
       ),
+      // Staff-only action bar. Students never see it, and the Firestore
+      // rules reject status changes from non-staff accounts anyway.
+      bottomNavigationBar: isStaff
+          ? SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: FilledButton.icon(
+                  onPressed: busy
+                      ? null
+                      : () => UpdateStatusSheet.show(context, incident),
+                  icon: const Icon(Icons.sync_alt),
+                  label: const Text('Update status'),
+                ),
+              ),
+            )
+          : null,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
         children: [
