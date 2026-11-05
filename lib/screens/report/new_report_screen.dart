@@ -108,6 +108,9 @@ class _NewReportScreenState extends State<NewReportScreen> {
         content: Text(
           _isEditing
               ? 'Report updated.'
+              : provider.lastSubmitQueued
+              ? 'You\'re offline. Your report is saved and will send '
+                    'automatically when you reconnect.'
               : 'Report sent. You can track its status on the home screen.',
         ),
       ),

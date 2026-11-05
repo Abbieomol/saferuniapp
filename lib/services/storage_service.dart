@@ -8,7 +8,11 @@ import 'package:firebase_storage/firebase_storage.dart';
 /// rules can check that a user only writes into their own folder.
 class StorageService {
   StorageService({FirebaseStorage? storage})
-    : _storage = storage ?? FirebaseStorage.instance;
+    : _storage = storage ?? FirebaseStorage.instance {
+    // Default is 10 minutes of retrying, which feels like a frozen app.
+    // Fail after 20 s instead so the student gets a clear message.
+    _storage.setMaxUploadRetryTime(const Duration(seconds: 20));
+  }
 
   final FirebaseStorage _storage;
 

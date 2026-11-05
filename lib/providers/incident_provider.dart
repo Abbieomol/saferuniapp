@@ -26,10 +26,17 @@ enum SortOrder {
 /// screens at once without manual refreshing.
 class IncidentProvider extends ChangeNotifier {
   IncidentProvider({IncidentRepository? repository})
-    : _repo = repository ?? IncidentRepository();
+    : _repoOverride = repository;
 
-  final IncidentRepository _repo;
-  StreamSubscription<List<Incident>>? _sub;
+  // Created on first use, so unit tests can build a provider without
+  // Firebase being initialised.
+  IncidentRepository? _repoOverride;
+  IncidentRepository get _repo => _repoOverride ??= IncidentRepository();
+
+  StreamSubscription<({List<Incident> items, bool fromCache})>? _sub;
+  Timer? _offlineTimer;
+  bool _offline = false;
+  bool _lastSubmitQueued = false;
   AppUser? _user;
 
   List<Incident> _all = const [];
@@ -49,6 +56,13 @@ class IncidentProvider extends ChangeNotifier {
   // ---------- Getters ----------
 
   AppUser? get user => _user;
+
+  /// True when reports have only come from the phone's cache for a few
+  /// seconds, i.e. there's no connection to Firestore.
+  bool get offline => _offline;
+
+  /// The last report was saved offline and will send when reconnected.
+  bool get lastSubmitQueued => _lastSubmitQueued;
   bool get loading => _loading;
   String? get loadError => _loadError;
   bool get submitting => _submitting;
@@ -191,10 +205,11 @@ class IncidentProvider extends ChangeNotifier {
   void _listen() {
     _loading = true;
     _sub = _repo.watchAll().listen(
-      (list) {
-        _all = list;
+      (feed) {
+        _all = feed.items;
         _loading = false;
         _loadError = null;
+        _trackConnection(feed.fromCache);
         notifyListeners();
       },
       onError: (Object e) {
@@ -204,6 +219,30 @@ class IncidentProvider extends ChangeNotifier {
         notifyListeners();
       },
     );
+  }
+
+  /// The first snapshot is often from cache even when online, so only
+  /// call it "offline" if cache-only data lasts a few seconds.
+  void _trackConnection(bool fromCache) {
+    if (!fromCache) {
+      _offlineTimer?.cancel();
+      _offline = false;
+      return;
+    }
+    if (_offline || (_offlineTimer?.isActive ?? false)) return;
+    _offlineTimer = Timer(const Duration(seconds: 3), () {
+      _offline = true;
+      notifyListeners();
+    });
+  }
+
+  /// Test seam: load reports and a user without Firestore.
+  @visibleForTesting
+  void debugSetData(List<Incident> incidents, {AppUser? user}) {
+    _all = incidents;
+    _user = user;
+    _loading = false;
+    notifyListeners();
   }
 
   void retry() {
@@ -275,6 +314,7 @@ class IncidentProvider extends ChangeNotifier {
 
     _submitting = true;
     _submitError = null;
+    _lastSubmitQueued = false;
     notifyListeners();
     try {
       await _repo.create(
@@ -288,6 +328,11 @@ class IncidentProvider extends ChangeNotifier {
         isAnonymous: isAnonymous,
         photo: photo,
       );
+      return true;
+    } on TimeoutException {
+      // No connection: Firestore has saved it on the phone and will
+      // send it automatically, so this still counts as success.
+      _lastSubmitQueued = true;
       return true;
     } catch (e, stack) {
       // Full details go to the terminal running `flutter run`.
@@ -320,16 +365,20 @@ class IncidentProvider extends ChangeNotifier {
     _submitError = null;
     notifyListeners();
     try {
-      await _repo.updateDetails(
-        incidentId: incidentId,
-        title: title,
-        description: description,
-        category: category,
-        priority: priority,
-        building: building,
-        locationDetail: locationDetail,
-      );
+      await _repo
+          .updateDetails(
+            incidentId: incidentId,
+            title: title,
+            description: description,
+            category: category,
+            priority: priority,
+            building: building,
+            locationDetail: locationDetail,
+          )
+          .timeout(IncidentRepository.writeTimeout);
       return true;
+    } on TimeoutException {
+      return true; // saved offline; syncs automatically
     } catch (e, stack) {
       debugPrint('updateReport failed: $e\n$stack');
       _submitError = _friendlyError(e);
@@ -403,7 +452,10 @@ class IncidentProvider extends ChangeNotifier {
     _busyIds.add(id);
     notifyListeners();
     try {
-      await run();
+      await run().timeout(IncidentRepository.writeTimeout);
+      return null;
+    } on TimeoutException {
+      // Applied to the local copy already; Firestore syncs it later.
       return null;
     } catch (e, stack) {
       debugPrint('Action on $id failed: $e\n$stack');
@@ -438,6 +490,7 @@ class IncidentProvider extends ChangeNotifier {
   @override
   void dispose() {
     _sub?.cancel();
+    _offlineTimer?.cancel();
     super.dispose();
   }
 }

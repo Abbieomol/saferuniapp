@@ -54,7 +54,12 @@ class HomeScreen extends StatelessWidget {
         icon: const Icon(Icons.add),
         label: const Text('Report issue'),
       ),
-      body: _body(context, incidents, firstName),
+      body: Column(
+        children: [
+          if (incidents.offline) const OfflineBanner(),
+          Expanded(child: _body(context, incidents, firstName)),
+        ],
+      ),
     );
   }
 

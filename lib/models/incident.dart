@@ -54,6 +54,10 @@ class Incident {
   /// Set by the reporter after staff mark the report resolved:
   /// true = "Confirmed fixed", false = reopened as "Still broken".
   final bool? reporterConfirmed;
+
+  /// Saved on this phone but not yet confirmed by the server
+  /// (e.g. sent while offline). Shown as "Waiting to sync".
+  final bool pendingSync;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -73,6 +77,7 @@ class Incident {
     required this.createdAt,
     this.affectedBy = const [],
     this.reporterConfirmed,
+    this.pendingSync = false,
     required this.updatedAt,
     this.photoUrl,
     this.photoPath,
@@ -120,6 +125,7 @@ class Incident {
         (data['affectedBy'] as List<dynamic>?) ?? const [],
       ),
       reporterConfirmed: data['reporterConfirmed'] as bool?,
+      pendingSync: doc.metadata.hasPendingWrites,
       // A just-written document can briefly have a null server timestamp.
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),

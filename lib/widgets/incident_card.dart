@@ -108,12 +108,26 @@ class IncidentCard extends StatelessWidget {
                           ),
                         ],
                         const Spacer(),
-                        Text(
-                          formatWhen(incident.createdAt),
-                          style: text.bodySmall?.copyWith(
+                        if (incident.pendingSync) ...[
+                          Icon(
+                            Icons.cloud_upload_outlined,
+                            size: 15,
                             color: Colors.grey.shade600,
                           ),
-                        ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Waiting to sync',
+                            style: text.bodySmall?.copyWith(
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ] else
+                          Text(
+                            formatWhen(incident.createdAt),
+                            style: text.bodySmall?.copyWith(
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
                       ],
                     ),
                   ],

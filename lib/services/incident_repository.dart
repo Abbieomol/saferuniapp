@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,14 +17,27 @@ class IncidentRepository {
   final CollectionReference<Map<String, dynamic>> _incidents;
   final StorageService _storage;
 
+  /// Firestore keeps offline writes in a local queue and only completes
+  /// the Future once the server confirms. After this long we stop waiting:
+  /// the write is already saved on the phone and syncs automatically.
+  static const writeTimeout = Duration(seconds: 10);
+
   // ---------- Read ----------
 
-  /// Every report, newest first. Filtering and search happen in the
+  /// Every report, newest first, plus whether the data came from the
+  /// phone's offline cache. Filtering and search happen in the
   /// IncidentProvider so changing a filter doesn't re-query Firestore.
-  Stream<List<Incident>> watchAll() => _incidents
+  /// Metadata changes are included so "Waiting to sync" clears as soon as
+  /// the server confirms a write.
+  Stream<({List<Incident> items, bool fromCache})> watchAll() => _incidents
       .orderBy('createdAt', descending: true)
-      .snapshots()
-      .map((snap) => snap.docs.map(Incident.fromDoc).toList());
+      .snapshots(includeMetadataChanges: true)
+      .map(
+        (snap) => (
+          items: snap.docs.map(Incident.fromDoc).toList(),
+          fromCache: snap.metadata.isFromCache,
+        ),
+      );
 
   Stream<Incident?> watchOne(String id) => _incidents
       .doc(id)
@@ -62,26 +76,31 @@ class IncidentRepository {
     );
 
     try {
-      await _incidents.add({
-        'title': title.trim(),
-        'description': description.trim(),
-        'category': category.name,
-        'priority': priority.name,
-        'status': IncidentStatus.submitted.name,
-        'building': building,
-        'locationDetail': locationDetail.trim(),
-        'photoUrl': photoUrl,
-        'photoPath': photoPath,
-        // reporterId is an opaque uid, needed so the rules can let the
-        // reporter edit/delete. The name is not stored for anonymous
-        // reports, so it can't leak to anyone reading the database.
-        'reporterId': reporter.uid,
-        'reporterName': isAnonymous ? '' : reporter.fullName,
-        'isAnonymous': isAnonymous,
-        'history': [firstEntry.toMap()],
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await _incidents
+          .add({
+            'title': title.trim(),
+            'description': description.trim(),
+            'category': category.name,
+            'priority': priority.name,
+            'status': IncidentStatus.submitted.name,
+            'building': building,
+            'locationDetail': locationDetail.trim(),
+            'photoUrl': photoUrl,
+            'photoPath': photoPath,
+            // reporterId is an opaque uid, needed so the rules can let the
+            // reporter edit/delete. The name is not stored for anonymous
+            // reports, so it can't leak to anyone reading the database.
+            'reporterId': reporter.uid,
+            'reporterName': isAnonymous ? '' : reporter.fullName,
+            'isAnonymous': isAnonymous,
+            'history': [firstEntry.toMap()],
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          })
+          .timeout(writeTimeout);
+    } on TimeoutException {
+      // Queued locally (offline). Keep the photo; the report will sync.
+      rethrow;
     } catch (_) {
       // Don't leave an orphaned photo if the report itself failed.
       if (photoPath != null) await _storage.deletePhoto(photoPath);

@@ -66,3 +66,30 @@ class ErrorView extends StatelessWidget {
     );
   }
 }
+
+/// Thin banner shown while there's no connection to Firestore.
+class OfflineBanner extends StatelessWidget {
+  const OfflineBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: Colors.blueGrey.shade700,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: const Row(
+        children: [
+          Icon(Icons.wifi_off, size: 18, color: Colors.white),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'You\'re offline. Showing saved reports; changes will sync '
+              'when you reconnect.',
+              style: TextStyle(color: Colors.white, fontSize: 12.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

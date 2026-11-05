@@ -61,7 +61,7 @@ class StaffDashboardScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: p.loading
+      body: p.loading && !p.offline
           ? const Center(child: CircularProgressIndicator())
           : p.loadError != null
           ? ErrorView(message: p.loadError!, onRetry: p.retry)
@@ -71,6 +71,7 @@ class StaffDashboardScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (p.offline) const OfflineBanner(),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                         child: _StatusGrid(provider: p),
