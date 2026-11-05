@@ -115,6 +115,43 @@ class IncidentProvider extends ChangeNotifier {
         .toList();
   }
 
+  // ---------- Staff dashboard helpers ----------
+
+  int countByCategory(IncidentCategory c) =>
+      _all.where((i) => i.category == c && i.status.isOpen).length;
+
+  /// Reporter said "Still broken" after staff resolved it.
+  bool isReopened(Incident i) =>
+      i.status == IncidentStatus.inReview && i.reporterConfirmed == false;
+
+  /// Open reports in the order staff should look at them:
+  /// reopened first, then high priority, then most affected, then oldest.
+  List<Incident> get needsAttention {
+    int rank(IncidentPriority p) => switch (p) {
+      IncidentPriority.high => 0,
+      IncidentPriority.medium => 1,
+      IncidentPriority.low => 2,
+    };
+    final open = _all.where((i) => i.status.isOpen).toList()
+      ..sort((a, b) {
+        final reopened = (isReopened(a) ? 0 : 1).compareTo(
+          isReopened(b) ? 0 : 1,
+        );
+        if (reopened != 0) return reopened;
+        final priority = rank(a.priority).compareTo(rank(b.priority));
+        if (priority != 0) return priority;
+        final affected = b.affectedCount.compareTo(a.affectedCount);
+        if (affected != 0) return affected;
+        return a.createdAt.compareTo(b.createdAt);
+      });
+    return open;
+  }
+
+  int get reopenedCount => _all.where(isReopened).length;
+
+  int get awaitingConfirmationCount =>
+      _all.where((i) => i.awaitingConfirmation).length;
+
   int get myReportCount => _all.where((i) => i.isReportedBy(_user?.uid)).length;
 
   int countByStatus(IncidentStatus s) =>
@@ -336,6 +373,28 @@ class IncidentProvider extends ChangeNotifier {
       note: note,
     ),
   );
+
+  /// Staff only. The UI hides this for students, and the Firestore rules
+  /// reject it even if a student found a way to call it.
+  Future<String?> updateStatus(
+    Incident incident,
+    IncidentStatus status,
+    String note,
+  ) {
+    final staff = _user;
+    if (staff == null || !staff.isStaff) {
+      return Future.value('Only campus staff can change a report\'s status.');
+    }
+    return _action(
+      incident.id,
+      () => _repo.updateStatus(
+        incidentId: incident.id,
+        status: status,
+        note: note,
+        staff: staff,
+      ),
+    );
+  }
 
   Future<String?> deleteReport(Incident incident) =>
       _action(incident.id, () => _repo.delete(incident));

@@ -103,7 +103,9 @@ class IncidentRepository {
       note: note.trim().isEmpty
           ? 'Status changed to ${status.label}'
           : note.trim(),
-      updatedBy: staff.fullName,
+      updatedBy: staff.fullName.trim().isEmpty
+          ? 'Campus staff'
+          : '${staff.fullName.trim()} (staff)',
       at: DateTime.now(),
     );
     return _incidents.doc(incidentId).update({
