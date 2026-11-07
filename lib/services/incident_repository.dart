@@ -8,7 +8,6 @@ import '../models/incident.dart';
 import '../models/incident_enums.dart';
 import 'storage_service.dart';
 
-/// All Firestore reads and writes for incident reports (the CRUD layer).
 class IncidentRepository {
   IncidentRepository({FirebaseFirestore? db, StorageService? storage})
     : _incidents = (db ?? FirebaseFirestore.instance).collection('incidents'),
@@ -17,18 +16,9 @@ class IncidentRepository {
   final CollectionReference<Map<String, dynamic>> _incidents;
   final StorageService _storage;
 
-  /// Firestore keeps offline writes in a local queue and only completes
-  /// the Future once the server confirms. After this long we stop waiting:
-  /// the write is already saved on the phone and syncs automatically.
+ 
   static const writeTimeout = Duration(seconds: 10);
 
-  // ---------- Read ----------
-
-  /// Every report, newest first, plus whether the data came from the
-  /// phone's offline cache. Filtering and search happen in the
-  /// IncidentProvider so changing a filter doesn't re-query Firestore.
-  /// Metadata changes are included so "Waiting to sync" clears as soon as
-  /// the server confirms a write.
   Stream<({List<Incident> items, bool fromCache})> watchAll() => _incidents
       .orderBy('createdAt', descending: true)
       .snapshots(includeMetadataChanges: true)
@@ -44,7 +34,7 @@ class IncidentRepository {
       .snapshots()
       .map((doc) => doc.exists ? Incident.fromDoc(doc) : null);
 
-  // ---------- Create ----------
+  // Create 
 
   Future<void> create({
     required AppUser reporter,
@@ -99,7 +89,7 @@ class IncidentRepository {
           })
           .timeout(writeTimeout);
     } on TimeoutException {
-      // Queued locally (offline). Keep the photo; the report will sync.
+      // Queued locally 
       rethrow;
     } catch (_) {
       // Don't leave an orphaned photo if the report itself failed.
@@ -108,9 +98,7 @@ class IncidentRepository {
     }
   }
 
-  // ---------- Update ----------
-
-  /// Staff only (enforced by security rules). Appends to the timeline.
+  // Update
   Future<void> updateStatus({
     required String incidentId,
     required IncidentStatus status,
@@ -134,7 +122,7 @@ class IncidentRepository {
     });
   }
 
-  /// Reporter may correct their own report while it is still "submitted".
+  /// Reporter may correct their own report 
   Future<void> updateDetails({
     required String incidentId,
     required String title,
@@ -155,8 +143,7 @@ class IncidentRepository {
     });
   }
 
-  /// "This affects me too": adds or removes only the caller's own uid.
-  /// arrayUnion/arrayRemove avoid overwriting other students' taps.
+
   Future<void> setAffected({
     required String incidentId,
     required String uid,
@@ -169,8 +156,7 @@ class IncidentRepository {
     });
   }
 
-  /// Reporter's answer after staff mark a report resolved.
-  /// Confirmed: stays resolved. Still broken: reopens as "In review".
+
   Future<void> respondToResolution({
     required String incidentId,
     required bool fixed,
@@ -195,9 +181,7 @@ class IncidentRepository {
     });
   }
 
-  // ---------- Delete ----------
-
-  /// Reporter (while still "submitted") or staff. Removes the photo too.
+  // Delete 
   Future<void> delete(Incident incident) async {
     await _incidents.doc(incident.id).delete();
     if (incident.photoPath != null) {

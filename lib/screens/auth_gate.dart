@@ -6,8 +6,6 @@ import 'auth/login_screen.dart';
 import 'auth/verify_email_screen.dart';
 import 'home_shell.dart';
 
-/// Root of the app. Chooses a screen from the current auth state, so
-/// signing in, verifying or signing out never needs manual navigation.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 

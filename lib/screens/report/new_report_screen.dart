@@ -183,7 +183,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                 if (incidents.submitError != null)
                   ErrorBanner(message: incidents.submitError!),
 
-                // ----- What -----
+                // What
                 const _SectionLabel('What happened?'),
                 FormField<IncidentCategory>(
                   validator: (_) =>
@@ -258,7 +258,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                   validator: Validators.description,
                 ),
 
-                // ----- Where -----
+                // Where
                 const _SectionLabel('Where is it?'),
                 DropdownButtonFormField<String>(
                   initialValue: _building,
@@ -306,7 +306,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                     reports: incidents.similarOpen(_category, _building),
                   ),
 
-                // ----- How urgent -----
+                // How urgent
                 const _SectionLabel('How urgent is it?'),
                 SegmentedButton<IncidentPriority>(
                   segments: IncidentPriority.values
@@ -329,7 +329,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                     ),
                   ),
 
-                // ----- Photo & privacy (new reports only) -----
+                // Photo & privacy (new reports only)
                 if (_isEditing)
                   Padding(
                     padding: const EdgeInsets.only(top: 24),

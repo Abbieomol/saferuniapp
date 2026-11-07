@@ -210,7 +210,7 @@ class IncidentDetailScreen extends StatelessWidget {
   }
 }
 
-// ---------- Pieces of the screen ----------
+// Pieces of the screen
 
 class _Photo extends StatelessWidget {
   const _Photo({required this.incident});

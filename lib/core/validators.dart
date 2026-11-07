@@ -1,7 +1,5 @@
 import 'app_config.dart';
 
-/// Form validators shared by every screen, so rules are defined once.
-/// Each returns an error message, or null when the value is valid.
 class Validators {
   Validators._();
 

@@ -31,7 +31,7 @@ class AuthScaffold extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ----- Brand header -----
+              // Brand header
               Container(
                 decoration: const BoxDecoration(
                   gradient: AppTheme.heroGradient,
@@ -86,7 +86,7 @@ class AuthScaffold extends StatelessWidget {
                   ],
                 ),
               ),
-              // ----- Form card, overlapping the header -----
+              // Form card, overlapping the header
               Transform.translate(
                 offset: const Offset(0, -44),
                 child: Center(

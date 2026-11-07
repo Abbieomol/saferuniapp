@@ -9,7 +9,7 @@ class AppConfig {
   static const String appName = 'Safer Uni';
 
   /// Only these email domains may register or sign in.
-  /// The role (student/staff) is NOT decided by the domain — it is stored
+  /// The role (student/staff) is NOT decided by the domain; it is stored
   /// in Firestore and can only be changed from the Firebase console.
   static const String studentDomain = 'alustudent.com';
   static const String staffDomain = 'alueducation.com';

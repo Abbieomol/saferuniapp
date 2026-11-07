@@ -1,11 +1,11 @@
 rules_version = '2';
 
-// Campus Fix – Firestore security rules (ALU Rwanda)
+// Safer Uni: Firestore security rules (ALU Rwanda)
 //
 // Access model:
 //   * Only verified @alustudent.com / @alueducation.com accounts get in.
 //   * Everyone starts as "student". Staff are promoted by changing
-//     users/{uid}.role to "staff" in the Firebase console – the app
+//     users/{uid}.role to "staff" in the Firebase console; the app
 //     itself can never set or change a role.
 //   * Students create reports and may edit/delete their own while it is
 //     still "submitted". Only staff can change a report's status.
@@ -13,7 +13,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------- Helpers ----------
+    // Helpers
 
     function isAluVerified() {
       return request.auth != null
@@ -54,7 +54,7 @@ service cloud.firestore {
         && (d.building != 'Other area' || d.locationDetail.size() > 0);
     }
 
-    // ---------- Users ----------
+    // Users
 
     match /users/{uid} {
       allow read: if isAluVerified()
@@ -80,7 +80,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---------- Incidents ----------
+    // Incidents
 
     match /incidents/{incidentId} {
       allow read: if isAluVerified();

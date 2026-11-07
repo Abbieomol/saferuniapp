@@ -9,7 +9,7 @@ import '../models/incident.dart';
 import '../models/incident_enums.dart';
 import '../services/incident_repository.dart';
 
-/// How the feed is ordered.
+
 enum SortOrder {
   newest('Newest first'),
   mostAffected('Most affected');
@@ -18,18 +18,10 @@ enum SortOrder {
   final String label;
 }
 
-/// App-wide incident state, shared through Provider.
-///
-/// Holds one live Firestore subscription to every report, plus the
-/// current search text and filters. Every screen that shows reports reads
-/// from here, so a new report or a staff status change appears on all
-/// screens at once without manual refreshing.
 class IncidentProvider extends ChangeNotifier {
   IncidentProvider({IncidentRepository? repository})
     : _repoOverride = repository;
 
-  // Created on first use, so unit tests can build a provider without
-  // Firebase being initialised.
   IncidentRepository? _repoOverride;
   IncidentRepository get _repo => _repoOverride ??= IncidentRepository();
 
@@ -45,7 +37,7 @@ class IncidentProvider extends ChangeNotifier {
   bool _submitting = false;
   String? _submitError;
 
-  // Filters (used by the feed; stage 3 adds the filter UI).
+ 
   String _query = '';
   IncidentCategory? _category;
   IncidentStatus? _status;
@@ -53,12 +45,10 @@ class IncidentProvider extends ChangeNotifier {
   bool _mineOnly = false;
   SortOrder _sort = SortOrder.newest;
 
-  // ---------- Getters ----------
 
   AppUser? get user => _user;
 
-  /// True when reports have only come from the phone's cache for a few
-  /// seconds, i.e. there's no connection to Firestore.
+
   bool get offline => _offline;
 
   /// The last report was saved offline and will send when reconnected.
@@ -114,8 +104,6 @@ class IncidentProvider extends ChangeNotifier {
     return result;
   }
 
-  /// Open reports in the same place and category: shown on the report
-  /// form so students can tap "Me too" instead of filing a duplicate.
   List<Incident> similarOpen(IncidentCategory? category, String? building) {
     if (category == null || building == null) return const [];
     return _all
@@ -129,17 +117,14 @@ class IncidentProvider extends ChangeNotifier {
         .toList();
   }
 
-  // ---------- Staff dashboard helpers ----------
 
   int countByCategory(IncidentCategory c) =>
       _all.where((i) => i.category == c && i.status.isOpen).length;
 
-  /// Reporter said "Still broken" after staff resolved it.
   bool isReopened(Incident i) =>
       i.status == IncidentStatus.inReview && i.reporterConfirmed == false;
 
-  /// Open reports in the order staff should look at them:
-  /// reopened first, then high priority, then most affected, then oldest.
+
   List<Incident> get needsAttention {
     int rank(IncidentPriority p) => switch (p) {
       IncidentPriority.high => 0,
@@ -180,10 +165,6 @@ class IncidentProvider extends ChangeNotifier {
     return null;
   }
 
-  // ---------- Connecting to the signed-in user ----------
-
-  /// Called by ChangeNotifierProxyProvider whenever AuthProvider changes.
-  /// Runs during a build, so it must not call notifyListeners directly.
   void updateUser(AppUser? user) {
     final sameAccount = user?.uid == _user?.uid;
     _user = user;
@@ -221,8 +202,6 @@ class IncidentProvider extends ChangeNotifier {
     );
   }
 
-  /// The first snapshot is often from cache even when online, so only
-  /// call it "offline" if cache-only data lasts a few seconds.
   void _trackConnection(bool fromCache) {
     if (!fromCache) {
       _offlineTimer?.cancel();
@@ -236,7 +215,6 @@ class IncidentProvider extends ChangeNotifier {
     });
   }
 
-  /// Test seam: load reports and a user without Firestore.
   @visibleForTesting
   void debugSetData(List<Incident> incidents, {AppUser? user}) {
     _all = incidents;
@@ -251,7 +229,6 @@ class IncidentProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------- Filters ----------
 
   void setQuery(String value) {
     _query = value;
@@ -297,8 +274,6 @@ class IncidentProvider extends ChangeNotifier {
     _sort = SortOrder.newest;
   }
 
-  // ---------- Creating a report ----------
-
   Future<bool> submitReport({
     required String title,
     required String description,
@@ -335,7 +310,6 @@ class IncidentProvider extends ChangeNotifier {
       _lastSubmitQueued = true;
       return true;
     } catch (e, stack) {
-      // Full details go to the terminal running `flutter run`.
       debugPrint('submitReport failed: $e\n$stack');
       _submitError = _friendlyError(e);
       return false;
@@ -350,7 +324,6 @@ class IncidentProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------- Editing an existing report ----------
 
   Future<bool> updateReport({
     required String incidentId,
@@ -389,12 +362,10 @@ class IncidentProvider extends ChangeNotifier {
     }
   }
 
-  // ---------- One-tap actions on a report ----------
-  // Each returns null on success or a message for a SnackBar.
 
   final Set<String> _busyIds = {};
 
-  /// True while an action on this report is in flight (disables buttons).
+  /// True while an action on this report is in flight.
   bool isBusy(String incidentId) => _busyIds.contains(incidentId);
 
   Future<String?> toggleAffected(Incident incident) {
@@ -423,8 +394,6 @@ class IncidentProvider extends ChangeNotifier {
     ),
   );
 
-  /// Staff only. The UI hides this for students, and the Firestore rules
-  /// reject it even if a student found a way to call it.
   Future<String?> updateStatus(
     Incident incident,
     IncidentStatus status,

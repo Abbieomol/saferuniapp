@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Campus Fix – Storage security rules (incident photos)
+// Safer Uni: Storage security rules (incident photos)
 // Photos live at incident_photos/{uid}/{fileName}.
 
 service firebase.storage {

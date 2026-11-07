@@ -39,7 +39,7 @@ class AuthProvider extends ChangeNotifier {
   String? get error => _error;
   String? get pendingEmail => _authService.currentUser?.email;
 
-  // ---------- Reacting to Firebase ----------
+  // Reacting to Firebase
 
   Future<void> _onAuthChanged(User? firebaseUser) async {
     await _profileSub?.cancel();
@@ -86,7 +86,7 @@ class AuthProvider extends ChangeNotifier {
         );
   }
 
-  // ---------- Actions called by screens ----------
+  // Actions called by screens
 
   Future<bool> register(String fullName, String email, String password) => _run(
     () => _authService.register(

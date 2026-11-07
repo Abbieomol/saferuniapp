@@ -2,8 +2,6 @@ import 'package:campus_incident_app/core/app_config.dart';
 import 'package:campus_incident_app/core/validators.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Unit tests for the form rules. They run without Firebase or a device:
-//   flutter test
 void main() {
   group('ALU email', () {
     test('accepts student and staff domains', () {
