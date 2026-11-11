@@ -2,7 +2,7 @@
 
 Safer Uni is a campus incident reporting app for ALU Rwanda. When something on campus is broken or unsafe, such as a leaking tap in Learning Commons, lights out in the parking lot or even security concerns, students can report it from a phone and follow it until it is fixed. Campus staff get a separate view for reviewing reports and updating each one as the work progresses.
 
-- Demo video: =====
+- Demo video: https://drive.google.com/file/d/1AS6fT2jKcv1hE7y3XpPXsW-vZUVF2XsH/view?usp=sharing 
 
 ## Features
 
